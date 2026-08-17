@@ -1,7 +1,7 @@
 # Impossible Flappy Bird
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
-[![Top language](https://img.shields.io/github/languages/top/Genius-Progarmmer/impossible-flappy-bird.svg)](https://github.com/Genius-Progarmmer/impossible-flappy-bird)
+[![Pygame](https://img.shields.io/badge/Pygame-2.1.3-blue?logo=python&logoColor=white)](https://www.pygame.org/)
 
 A standalone Pygame implementation of a Flappy Bird–style game rendered in pixel art.
 
