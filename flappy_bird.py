@@ -4,40 +4,35 @@ import sys
 
 pygame.init()
 
-# Game settings
-WIDTH = 400
-HEIGHT = 600
-FPS = 60
+width = 400
+height = 600
+fps = 60
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Flappy Bird")
 clock = pygame.time.Clock()
 
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-SKY = (135, 206, 235)
-GREEN = (34, 139, 34)
-DARK_GREEN = (20, 100, 20)
-YELLOW = (255, 200, 0)
-ORANGE = (255, 140, 0)
-RED = (255, 0, 0)
+white = (255, 255, 255)
+black = (0, 0, 0)
+sky = (135, 206, 235)
+green = (34, 139, 34)
+dark_green = (20, 100, 20)
+yellow = (255, 200, 0)
+orange = (255, 140, 0)
+red = (255, 0, 0)
 
-# Player settings
 bird_x = 100
 bird_width = 56
 bird_height = 32
 gravity = 0.5
 jump_power = -10
 
-# Pipe settings
 pipe_width = 70
 pipe_gap = 250
 pipe_speed = 3
 pipe_time = 1500
 
-
-PIXEL_FONT = {
+pixel_font = {
     "0": [(1,0),(2,0),(3,0),(0,1),(4,1),(0,2),(4,2),(0,3),(4,3),
           (0,4),(4,4),(0,5),(4,5),(1,6),(2,6),(3,6)],
     "1": [(2,0),(1,1),(2,1),(2,2),(2,3),(2,4),(2,5),(1,6),(2,6),(3,6)],
@@ -84,34 +79,38 @@ PIXEL_FONT = {
 
 
 def pixel_text(text, x, y, size, color, shadow=None):
-    pos = 0
+    position = 0
 
     for letter in text.upper():
-        if letter not in PIXEL_FONT:
+        if letter not in pixel_font:
             continue
 
-        for px, py in PIXEL_FONT[letter]:
+        for pixel_x, pixel_y in pixel_font[letter]:
             if shadow:
                 pygame.draw.rect(
                     screen,
                     shadow,
-                    (x + pos + px * size + size,
-                     y + py * size + size,
-                     size,
-                     size)
+                    (
+                        x + position + pixel_x * size + size,
+                        y + pixel_y * size + size,
+                        size,
+                        size
+                    )
                 )
 
-        for px, py in PIXEL_FONT[letter]:
+        for pixel_x, pixel_y in pixel_font[letter]:
             pygame.draw.rect(
                 screen,
                 color,
-                (x + pos + px * size,
-                 y + py * size,
-                 size,
-                 size)
+                (
+                    x + position + pixel_x * size,
+                    y + pixel_y * size,
+                    size,
+                    size
+                )
             )
 
-        pos += size * 6
+        position += size * 6
 
 
 def text_size(text, size):
@@ -122,12 +121,10 @@ class Player:
 
     def __init__(self):
         self.x = bird_x
-        self.y = HEIGHT // 2
+        self.y = height // 2
         self.speed = 0
-
         self.width = bird_width
         self.height = bird_height
-
         self.wing = 0
         self.wing_count = 0
 
@@ -184,29 +181,39 @@ class Player:
                 (2,7),(3,7),(4,7),(5,7)
             ]
 
-        for x, y in wing:
+        for pixel_x, pixel_y in wing:
             pygame.draw.rect(
                 screen,
-                ORANGE,
-                (self.x + x * size, self.y + y * size, size, size)
+                orange,
+                (
+                    self.x + pixel_x * size,
+                    self.y + pixel_y * size,
+                    size,
+                    size
+                )
             )
 
-        for x, y in body:
+        for pixel_x, pixel_y in body:
             pygame.draw.rect(
                 screen,
-                YELLOW,
-                (self.x + x * size, self.y + y * size, size, size)
+                yellow,
+                (
+                    self.x + pixel_x * size,
+                    self.y + pixel_y * size,
+                    size,
+                    size
+                )
             )
 
         pygame.draw.rect(
             screen,
-            BLACK,
+            black,
             (self.x + 8 * size, self.y + 2 * size, size, size)
         )
 
         pygame.draw.rect(
             screen,
-            WHITE,
+            white,
             (self.x + 9 * size, self.y + 2 * size, size, size)
         )
 
@@ -215,11 +222,16 @@ class Player:
             (11,4),(12,4)
         ]
 
-        for x, y in beak:
+        for pixel_x, pixel_y in beak:
             pygame.draw.rect(
                 screen,
-                ORANGE,
-                (self.x + x * size, self.y + y * size, size, size)
+                orange,
+                (
+                    self.x + pixel_x * size,
+                    self.y + pixel_y * size,
+                    size,
+                    size
+                )
             )
 
     def rect(self):
@@ -242,7 +254,7 @@ class Cloud:
         self.x -= self.speed
 
         if self.x < -60:
-            self.x = WIDTH + 20
+            self.x = width + 20
 
     def draw(self):
 
@@ -256,22 +268,24 @@ class Cloud:
             (1,4),(2,4),(3,4),(4,4),(5,4)
         ]
 
-        for x, y in shape:
+        for pixel_x, pixel_y in shape:
             pygame.draw.rect(
                 screen,
-                WHITE,
-                (self.x + x * size,
-                 self.y + y * size,
-                 size,
-                 size)
+                white,
+                (
+                    self.x + pixel_x * size,
+                    self.y + pixel_y * size,
+                    size,
+                    size
+                )
             )
 
 
 class Pipe:
 
     def __init__(self):
-        self.x = WIDTH
-        self.gap_y = random.randint(150, HEIGHT - 250)
+        self.x = width
+        self.gap_y = random.randint(150, height - 250)
         self.passed = False
 
     def update(self):
@@ -283,52 +297,52 @@ class Pipe:
 
         pygame.draw.rect(
             screen,
-            GREEN,
+            green,
             (self.x, 0, pipe_width, self.gap_y)
         )
 
         pygame.draw.rect(
             screen,
-            BLACK,
+            black,
             (self.x, 0, pipe_width, self.gap_y),
             2
         )
 
         pygame.draw.rect(
             screen,
-            GREEN,
+            green,
             (self.x - 5, self.gap_y - 30, pipe_width + 10, 30)
         )
 
         pygame.draw.rect(
             screen,
-            BLACK,
+            black,
             (self.x - 5, self.gap_y - 30, pipe_width + 10, 30),
             2
         )
 
         pygame.draw.rect(
             screen,
-            GREEN,
-            (self.x, bottom, pipe_width, HEIGHT - bottom)
+            green,
+            (self.x, bottom, pipe_width, height - bottom)
         )
 
         pygame.draw.rect(
             screen,
-            BLACK,
-            (self.x, bottom, pipe_width, HEIGHT - bottom),
+            black,
+            (self.x, bottom, pipe_width, height - bottom),
             2
         )
 
         pygame.draw.rect(
             screen,
-            GREEN,
+            green,
             (self.x - 5, bottom, pipe_width + 10, 30)
         )
 
         pygame.draw.rect(
             screen,
-            BLACK,
+            black,
             (self.x - 5, bottom, pipe_width + 10, 30),
             2
         )
@@ -346,7 +360,7 @@ class Pipe:
             self.x,
             self.gap_y + pipe_gap,
             pipe_width,
-            HEIGHT
+            height
         )
 
         return player.rect().colliderect(top) or player.rect().colliderect(bottom)
@@ -368,7 +382,6 @@ started = False
 countdown = 3
 countdown_start = pygame.time.get_ticks()
 last_pipe = pygame.time.get_ticks()
-
 
 running = True
 
@@ -423,7 +436,7 @@ while running:
             if player.y < 0:
                 game_over = True
 
-            if player.y + player.height > HEIGHT - 50:
+            if player.y + player.height > height - 50:
                 game_over = True
 
             now = pygame.time.get_ticks()
@@ -447,7 +460,7 @@ while running:
                 if pipe.x + pipe_width < 0:
                     pipes.remove(pipe)
 
-    screen.fill(SKY)
+    screen.fill(sky)
 
     for cloud in clouds:
         cloud.draw()
@@ -457,99 +470,101 @@ while running:
 
     pygame.draw.rect(
         screen,
-        GREEN,
-        (0, HEIGHT - 50, WIDTH, 50)
+        green,
+        (0, height - 50, width, 50)
     )
 
     pygame.draw.rect(
         screen,
-        DARK_GREEN,
-        (0, HEIGHT - 50, WIDTH, 50),
+        dark_green,
+        (0, height - 50, width, 50),
         3
     )
 
-    for x in range(0, WIDTH, 20):
+    for x in range(0, width, 20):
+
         pygame.draw.rect(
             screen,
-            DARK_GREEN,
-            (x, HEIGHT - 48, 8, 8)
+            dark_green,
+            (x, height - 48, 8, 8)
         )
 
         pygame.draw.rect(
             screen,
-            DARK_GREEN,
-            (x + 10, HEIGHT - 42, 6, 6)
+            dark_green,
+            (x + 10, height - 42, 6, 6)
         )
 
     player.draw()
 
     if started:
+
         score_text = str(score)
-        width = text_size(score_text, 6)
+        score_width = text_size(score_text, 6)
 
         pixel_text(
             score_text,
-            WIDTH // 2 - width // 2,
+            width // 2 - score_width // 2,
             40,
             6,
-            WHITE,
-            BLACK
+            white,
+            black
         )
 
     elif countdown > 0:
 
         number = str(countdown)
-        width = text_size(number, 8)
+        number_width = text_size(number, 8)
 
         pixel_text(
             number,
-            WIDTH // 2 - width // 2,
-            HEIGHT // 2 - 28,
+            width // 2 - number_width // 2,
+            height // 2 - 28,
             8,
-            WHITE,
-            BLACK
+            white,
+            black
         )
 
     if game_over:
 
         title = "GAME OVER"
-        width = text_size(title, 4)
+        title_width = text_size(title, 4)
 
         pixel_text(
             title,
-            WIDTH // 2 - width // 2,
-            HEIGHT // 2 - 40,
+            width // 2 - title_width // 2,
+            height // 2 - 40,
             4,
-            RED,
-            BLACK
+            red,
+            black
         )
 
         text = "PRESS SPACE"
-        width = text_size(text, 2)
+        text_width = text_size(text, 2)
 
         pixel_text(
             text,
-            WIDTH // 2 - width // 2,
-            HEIGHT // 2 + 10,
+            width // 2 - text_width // 2,
+            height // 2 + 10,
             2,
-            WHITE,
-            BLACK
+            white,
+            black
         )
 
         text = "TO RESTART"
-        width = text_size(text, 2)
+        text_width = text_size(text, 2)
 
         pixel_text(
             text,
-            WIDTH // 2 - width // 2,
-            HEIGHT // 2 + 30,
+            width // 2 - text_width // 2,
+            height // 2 + 30,
             2,
-            WHITE,
-            BLACK
+            white,
+            black
         )
 
     pygame.display.update()
-    clock.tick(FPS)
+    clock.tick(fps)
 
 pygame.quit()
 sys.exit()
