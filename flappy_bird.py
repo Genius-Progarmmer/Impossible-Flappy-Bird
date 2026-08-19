@@ -1,14 +1,17 @@
 import pygame
 import random
 import sys
+import math
+from array import array
 
 pygame.init()
+pygame.mixer.init()
 
-width = 400
-height = 600
+w = 400
+h = 600
 fps = 60
 
-screen = pygame.display.set_mode((width, height))
+screen = pygame.display.set_mode((w, h))
 pygame.display.set_caption("Flappy Bird")
 clock = pygame.time.Clock()
 
@@ -24,15 +27,62 @@ red = (255, 0, 0)
 bird_x = 100
 bird_w = 56
 bird_h = 32
-gravity = 0.5
-jump = -10
+
+gravity = .5
+jump_power = -10
 
 pipe_w = 70
-gap = 250
+pipe_gap = 250
 pipe_speed = 3
-pipe_time = 1500
+pipe_delay = 1500
 
-font_data = {
+sound_on = True
+sound_btn = pygame.Rect(10, 10, 90, 30)
+
+
+def make_sound(start, end, length, vol):
+    rate = 44100
+    data = array("h")
+    count = int(rate * length)
+
+    for i in range(count):
+        t = i / count
+        freq = start + (end - start) * t
+
+        fade = 1
+
+        if t < .1:
+            fade = t / .1
+        elif t > .8:
+            fade = (1 - t) / .2
+
+        v = int(
+            32767
+            * vol
+            * fade
+            * math.sin(2 * math.pi * freq * i / rate)
+        )
+
+        data.append(v)
+
+    return pygame.mixer.Sound(buffer=data)
+
+
+s3 = make_sound(420, 520, .14, .16)
+s2 = make_sound(500, 600, .14, .16)
+s1 = make_sound(580, 700, .16, .16)
+
+jump_s = make_sound(500, 900, .09, .13)
+pipe_s = make_sound(260, 180, .12, .10)
+lose_s = make_sound(420, 100, .35, .16)
+
+
+def play(s):
+    if sound_on:
+        s.play()
+
+
+font = {
     "0": [(1,0),(2,0),(3,0),(0,1),(4,1),(0,2),(4,2),(0,3),(4,3),
           (0,4),(4,4),(0,5),(4,5),(1,6),(2,6),(3,6)],
     "1": [(2,0),(1,1),(2,1),(2,2),(2,3),(2,4),(2,5),(1,6),(2,6),(3,6)],
@@ -78,75 +128,74 @@ font_data = {
 }
 
 
-def draw_text(text, x, y, size, color, shadow=None):
-    position = 0
+def text(txt, x, y, size, color, shadow=None):
+    pos = 0
 
-    for letter in text.upper():
-        if letter not in font_data:
+    for ch in txt.upper():
+        if ch not in font:
             continue
 
-        for pixel_x, pixel_y in font_data[letter]:
+        for px, py in font[ch]:
             if shadow:
                 pygame.draw.rect(
                     screen,
                     shadow,
                     (
-                        x + position + pixel_x * size + size,
-                        y + pixel_y * size + size,
+                        x + pos + px * size + size,
+                        y + py * size + size,
                         size,
                         size
                     )
                 )
 
-        for pixel_x, pixel_y in font_data[letter]:
+        for px, py in font[ch]:
             pygame.draw.rect(
                 screen,
                 color,
                 (
-                    x + position + pixel_x * size,
-                    y + pixel_y * size,
+                    x + pos + px * size,
+                    y + py * size,
                     size,
                     size
                 )
             )
 
-        position += size * 6
+        pos += size * 6
 
 
-def get_text_size(text, size):
-    return len(text) * size * 6
+def txt_w(txt, size):
+    return len(txt) * size * 6
 
 
-class Player:
+class Bird:
 
     def __init__(self):
         self.x = bird_x
-        self.y = height // 2
-        self.speed = 0
+        self.y = h // 2
+        self.v = 0
         self.w = bird_w
         self.h = bird_h
         self.wing = 0
-        self.wing_count = 0
+        self.wing_t = 0
 
     def jump(self):
-        self.speed = jump
+        self.v = jump_power
         self.wing = 0
 
     def update(self):
-        self.speed += gravity
-        self.y += self.speed
+        self.v += gravity
+        self.y += self.v
 
-        self.wing_count += 1
+        self.wing_t += 1
 
-        if self.wing_count >= 6:
-            self.wing_count = 0
+        if self.wing_t >= 6:
+            self.wing_t = 0
             self.wing += 1
 
             if self.wing > 2:
                 self.wing = 0
 
     def draw(self):
-
         size = 4
 
         body = [
@@ -166,14 +215,12 @@ class Player:
                 (1,5),(2,5),(3,5),(4,5),
                 (2,6),(3,6),(4,6),(5,6)
             ]
-
         elif self.wing == 1:
             wing = [
                 (1,3),(2,3),(3,3),
                 (1,4),(2,4),(3,4),(4,4),
                 (2,5),(3,5),(4,5)
             ]
-
         else:
             wing = [
                 (1,5),(2,5),(3,5),
@@ -181,25 +228,25 @@ class Player:
                 (2,7),(3,7),(4,7),(5,7)
             ]
 
-        for pixel_x, pixel_y in wing:
+        for px, py in wing:
             pygame.draw.rect(
                 screen,
                 orange,
                 (
-                    self.x + pixel_x * size,
-                    self.y + pixel_y * size,
+                    self.x + px * size,
+                    self.y + py * size,
                     size,
                     size
                 )
             )
 
-        for pixel_x, pixel_y in body:
+        for px, py in body:
             pygame.draw.rect(
                 screen,
                 yellow,
                 (
-                    self.x + pixel_x * size,
-                    self.y + pixel_y * size,
+                    self.x + px * size,
+                    self.y + py * size,
                     size,
                     size
                 )
@@ -222,13 +269,13 @@ class Player:
             (11,4),(12,4)
         ]
 
-        for pixel_x, pixel_y in beak:
+        for px, py in beak:
             pygame.draw.rect(
                 screen,
                 orange,
                 (
-                    self.x + pixel_x * size,
-                    self.y + pixel_y * size,
+                    self.x + px * size,
+                    self.y + py * size,
                     size,
                     size
                 )
@@ -254,10 +301,9 @@ class Cloud:
         self.x -= self.speed
 
         if self.x < -60:
-            self.x = width + 20
+            self.x = w + 20
 
     def draw(self):
-
         size = 4
 
         shape = [
@@ -268,13 +314,13 @@ class Cloud:
             (1,4),(2,4),(3,4),(4,4),(5,4)
         ]
 
-        for pixel_x, pixel_y in shape:
+        for px, py in shape:
             pygame.draw.rect(
                 screen,
                 white,
                 (
-                    self.x + pixel_x * size,
-                    self.y + pixel_y * size,
+                    self.x + px * size,
+                    self.y + py * size,
                     size,
                     size
                 )
@@ -284,16 +330,15 @@ class Cloud:
 class Pipe:
 
     def __init__(self):
-        self.x = width
-        self.gap_y = random.randint(150, height - 250)
+        self.x = w
+        self.gap_y = random.randint(150, h - 250)
         self.passed = False
 
     def update(self):
         self.x -= pipe_speed
 
     def draw(self):
-
-        bottom = self.gap_y + gap
+        bottom = self.gap_y + pipe_gap
 
         pygame.draw.rect(
             screen,
@@ -324,13 +369,13 @@ class Pipe:
         pygame.draw.rect(
             screen,
             green,
-            (self.x, bottom, pipe_w, height - bottom)
+            (self.x, bottom, pipe_w, h - bottom)
         )
 
         pygame.draw.rect(
             screen,
             black,
-            (self.x, bottom, pipe_w, height - bottom),
+            (self.x, bottom, pipe_w, h - bottom),
             2
         )
 
@@ -347,8 +392,7 @@ class Pipe:
             2
         )
 
-    def hit_player(self, player):
-
+    def hit(self, bird):
         top = pygame.Rect(
             self.x,
             0,
@@ -358,206 +402,260 @@ class Pipe:
 
         bottom = pygame.Rect(
             self.x,
-            self.gap_y + gap,
+            self.gap_y + pipe_gap,
             pipe_w,
-            height
+            h
         )
 
-        return player.rect().colliderect(top) or player.rect().colliderect(bottom)
+        r = bird.rect()
+
+        return r.colliderect(top) or r.colliderect(bottom)
 
 
 clouds = [
-    Cloud(100, 80, 0.5),
-    Cloud(250, 120, 0.3),
-    Cloud(380, 60, 0.4)
+    Cloud(100, 80, .5),
+    Cloud(250, 120, .3),
+    Cloud(380, 60, .4)
 ]
 
-player = Player()
+bird = Bird()
 pipes = []
 
 score = 0
-game_over = False
+over = False
 started = False
+lost = False
 
-countdown = 3
-count_start = pygame.time.get_ticks()
-last_pipe = pygame.time.get_ticks()
+count = 3
+count_t = pygame.time.get_ticks()
+pipe_t = pygame.time.get_ticks()
 
-running = True
+play(s3)
 
-while running:
+run = True
+
+while run:
 
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
-            running = False
+            run = False
 
         if event.type == pygame.KEYDOWN:
 
             if event.key == pygame.K_ESCAPE:
-                running = False
+                run = False
 
             if event.key == pygame.K_SPACE:
 
-                if game_over:
-                    player = Player()
+                if over:
+                    bird = Bird()
                     pipes = []
                     score = 0
-                    game_over = False
+                    over = False
                     started = False
-                    countdown = 3
-                    count_start = pygame.time.get_ticks()
-                    last_pipe = pygame.time.get_ticks()
+                    lost = False
+                    count = 3
+
+                    count_t = pygame.time.get_ticks()
+                    pipe_t = pygame.time.get_ticks()
+
+                    play(s3)
 
                 elif started:
-                    player.jump()
+                    bird.jump()
+                    play(jump_s)
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+
+            if sound_btn.collidepoint(event.pos):
+                sound_on = not sound_on
 
     for cloud in clouds:
         cloud.update()
 
-    if not game_over:
+    if not over:
 
         if not started:
 
             now = pygame.time.get_ticks()
 
-            if now - count_start >= 1000:
-                count_start = now
-                countdown -= 1
+            if now - count_t >= 1000:
+                count_t = now
 
-                if countdown <= 0:
+                if count == 3:
+                    play(s3)
+                elif count == 2:
+                    play(s2)
+                elif count == 1:
+                    play(s1)
+
+                count -= 1
+
+                if count <= 0:
                     started = True
-                    last_pipe = now
+                    pipe_t = now
 
         else:
 
-            player.update()
+            bird.update()
 
-            if player.y < 0:
-                game_over = True
-
-            if player.y + player.h > height - 50:
-                game_over = True
+            if bird.y < 0 or bird.y + bird.h > h - 50:
+                over = True
 
             now = pygame.time.get_ticks()
 
-            if now - last_pipe >= pipe_time:
+            if now - pipe_t >= pipe_delay:
                 pipes.append(Pipe())
-                last_pipe = now
+                play(pipe_s)
+                pipe_t = now
 
-            for pipe in pipes[:]:
+            for p in pipes[:]:
 
-                pipe.update()
+                p.update()
 
-                if pipe.hit_player(player):
-                    game_over = True
+                if p.hit(bird):
+                    over = True
 
-                if pipe.passed == False:
-                    if pipe.x + pipe_w < player.x:
-                        pipe.passed = True
-                        score += 1
+                if not p.passed and p.x + pipe_w < bird.x:
+                    p.passed = True
+                    score += 1
 
-                if pipe.x + pipe_w < 0:
-                    pipes.remove(pipe)
+                if p.x + pipe_w < 0:
+                    pipes.remove(p)
+
+    if over and not lost:
+        play(lose_s)
+        lost = True
 
     screen.fill(sky)
 
     for cloud in clouds:
         cloud.draw()
 
-    for pipe in pipes:
-        pipe.draw()
+    for p in pipes:
+        p.draw()
 
     pygame.draw.rect(
         screen,
         green,
-        (0, height - 50, width, 50)
+        (0, h - 50, w, 50)
     )
 
     pygame.draw.rect(
         screen,
         dark_green,
-        (0, height - 50, width, 50),
+        (0, h - 50, w, 50),
         3
     )
 
-    for x in range(0, width, 20):
+    for x in range(0, w, 20):
 
         pygame.draw.rect(
             screen,
             dark_green,
-            (x, height - 48, 8, 8)
+            (x, h - 48, 8, 8)
         )
 
         pygame.draw.rect(
             screen,
             dark_green,
-            (x + 10, height - 42, 6, 6)
+            (x + 10, h - 42, 6, 6)
         )
 
-    player.draw()
+    bird.draw()
+
+    pygame.draw.rect(
+        screen,
+        white,
+        sound_btn
+    )
+
+    pygame.draw.rect(
+        screen,
+        black,
+        sound_btn,
+        2
+    )
+
+    if sound_on:
+        text(
+            "SOUND",
+            20,
+            18,
+            2,
+            black
+        )
+    else:
+        text(
+            "MUTED",
+            20,
+            18,
+            2,
+            red
+        )
 
     if started:
 
-        score_str = str(score)
-        score_w = get_text_size(score_str, 6)
+        s = str(score)
+        sw = txt_w(s, 6)
 
-        draw_text(
-            score_str,
-            width // 2 - score_w // 2,
+        text(
+            s,
+            w // 2 - sw // 2,
             40,
             6,
             white,
             black
         )
 
-    elif countdown > 0:
+    elif count > 0:
 
-        number = str(countdown)
-        number_w = get_text_size(number, 8)
+        s = str(count)
+        sw = txt_w(s, 8)
 
-        draw_text(
-            number,
-            width // 2 - number_w // 2,
-            height // 2 - 28,
+        text(
+            s,
+            w // 2 - sw // 2,
+            h // 2 - 28,
             8,
             white,
             black
         )
 
-    if game_over:
+    if over:
 
-        title = "GAME OVER"
-        title_w = get_text_size(title, 4)
+        s = "GAME OVER"
+        sw = txt_w(s, 4)
 
-        draw_text(
-            title,
-            width // 2 - title_w // 2,
-            height // 2 - 40,
+        text(
+            s,
+            w // 2 - sw // 2,
+            h // 2 - 40,
             4,
             red,
             black
         )
 
-        text = "PRESS SPACE"
-        text_w = get_text_size(text, 2)
+        s = "PRESS SPACE"
+        sw = txt_w(s, 2)
 
-        draw_text(
-            text,
-            width // 2 - text_w // 2,
-            height // 2 + 10,
+        text(
+            s,
+            w // 2 - sw // 2,
+            h // 2 + 10,
             2,
             white,
             black
         )
 
-        text = "TO RESTART"
-        text_w = get_text_size(text, 2)
+        s = "TO RESTART"
+        sw = txt_w(s, 2)
 
-        draw_text(
-            text,
-            width // 2 - text_w // 2,
-            height // 2 + 30,
+        text(
+            s,
+            w // 2 - sw // 2,
+            h // 2 + 30,
             2,
             white,
             black
