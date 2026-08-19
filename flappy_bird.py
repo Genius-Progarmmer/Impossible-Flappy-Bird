@@ -22,17 +22,17 @@ orange = (255, 140, 0)
 red = (255, 0, 0)
 
 bird_x = 100
-bird_width = 56
-bird_height = 32
+bird_w = 56
+bird_h = 32
 gravity = 0.5
-jump_power = -10
+jump = -10
 
-pipe_width = 70
-pipe_gap = 250
+pipe_w = 70
+gap = 250
 pipe_speed = 3
 pipe_time = 1500
 
-pixel_font = {
+font_data = {
     "0": [(1,0),(2,0),(3,0),(0,1),(4,1),(0,2),(4,2),(0,3),(4,3),
           (0,4),(4,4),(0,5),(4,5),(1,6),(2,6),(3,6)],
     "1": [(2,0),(1,1),(2,1),(2,2),(2,3),(2,4),(2,5),(1,6),(2,6),(3,6)],
@@ -78,14 +78,14 @@ pixel_font = {
 }
 
 
-def pixel_text(text, x, y, size, color, shadow=None):
+def draw_text(text, x, y, size, color, shadow=None):
     position = 0
 
     for letter in text.upper():
-        if letter not in pixel_font:
+        if letter not in font_data:
             continue
 
-        for pixel_x, pixel_y in pixel_font[letter]:
+        for pixel_x, pixel_y in font_data[letter]:
             if shadow:
                 pygame.draw.rect(
                     screen,
@@ -98,7 +98,7 @@ def pixel_text(text, x, y, size, color, shadow=None):
                     )
                 )
 
-        for pixel_x, pixel_y in pixel_font[letter]:
+        for pixel_x, pixel_y in font_data[letter]:
             pygame.draw.rect(
                 screen,
                 color,
@@ -113,7 +113,7 @@ def pixel_text(text, x, y, size, color, shadow=None):
         position += size * 6
 
 
-def text_size(text, size):
+def get_text_size(text, size):
     return len(text) * size * 6
 
 
@@ -123,13 +123,13 @@ class Player:
         self.x = bird_x
         self.y = height // 2
         self.speed = 0
-        self.width = bird_width
-        self.height = bird_height
+        self.w = bird_w
+        self.h = bird_h
         self.wing = 0
         self.wing_count = 0
 
     def jump(self):
-        self.speed = jump_power
+        self.speed = jump
         self.wing = 0
 
     def update(self):
@@ -238,8 +238,8 @@ class Player:
         return pygame.Rect(
             self.x,
             self.y,
-            self.width,
-            self.height
+            self.w,
+            self.h
         )
 
 
@@ -293,57 +293,57 @@ class Pipe:
 
     def draw(self):
 
-        bottom = self.gap_y + pipe_gap
+        bottom = self.gap_y + gap
 
         pygame.draw.rect(
             screen,
             green,
-            (self.x, 0, pipe_width, self.gap_y)
+            (self.x, 0, pipe_w, self.gap_y)
         )
 
         pygame.draw.rect(
             screen,
             black,
-            (self.x, 0, pipe_width, self.gap_y),
+            (self.x, 0, pipe_w, self.gap_y),
             2
         )
 
         pygame.draw.rect(
             screen,
             green,
-            (self.x - 5, self.gap_y - 30, pipe_width + 10, 30)
+            (self.x - 5, self.gap_y - 30, pipe_w + 10, 30)
         )
 
         pygame.draw.rect(
             screen,
             black,
-            (self.x - 5, self.gap_y - 30, pipe_width + 10, 30),
+            (self.x - 5, self.gap_y - 30, pipe_w + 10, 30),
             2
         )
 
         pygame.draw.rect(
             screen,
             green,
-            (self.x, bottom, pipe_width, height - bottom)
+            (self.x, bottom, pipe_w, height - bottom)
         )
 
         pygame.draw.rect(
             screen,
             black,
-            (self.x, bottom, pipe_width, height - bottom),
+            (self.x, bottom, pipe_w, height - bottom),
             2
         )
 
         pygame.draw.rect(
             screen,
             green,
-            (self.x - 5, bottom, pipe_width + 10, 30)
+            (self.x - 5, bottom, pipe_w + 10, 30)
         )
 
         pygame.draw.rect(
             screen,
             black,
-            (self.x - 5, bottom, pipe_width + 10, 30),
+            (self.x - 5, bottom, pipe_w + 10, 30),
             2
         )
 
@@ -352,14 +352,14 @@ class Pipe:
         top = pygame.Rect(
             self.x,
             0,
-            pipe_width,
+            pipe_w,
             self.gap_y
         )
 
         bottom = pygame.Rect(
             self.x,
-            self.gap_y + pipe_gap,
-            pipe_width,
+            self.gap_y + gap,
+            pipe_w,
             height
         )
 
@@ -380,7 +380,7 @@ game_over = False
 started = False
 
 countdown = 3
-countdown_start = pygame.time.get_ticks()
+count_start = pygame.time.get_ticks()
 last_pipe = pygame.time.get_ticks()
 
 running = True
@@ -406,7 +406,7 @@ while running:
                     game_over = False
                     started = False
                     countdown = 3
-                    countdown_start = pygame.time.get_ticks()
+                    count_start = pygame.time.get_ticks()
                     last_pipe = pygame.time.get_ticks()
 
                 elif started:
@@ -421,8 +421,8 @@ while running:
 
             now = pygame.time.get_ticks()
 
-            if now - countdown_start >= 1000:
-                countdown_start = now
+            if now - count_start >= 1000:
+                count_start = now
                 countdown -= 1
 
                 if countdown <= 0:
@@ -436,7 +436,7 @@ while running:
             if player.y < 0:
                 game_over = True
 
-            if player.y + player.height > height - 50:
+            if player.y + player.h > height - 50:
                 game_over = True
 
             now = pygame.time.get_ticks()
@@ -453,11 +453,11 @@ while running:
                     game_over = True
 
                 if pipe.passed == False:
-                    if pipe.x + pipe_width < player.x:
+                    if pipe.x + pipe_w < player.x:
                         pipe.passed = True
                         score += 1
 
-                if pipe.x + pipe_width < 0:
+                if pipe.x + pipe_w < 0:
                     pipes.remove(pipe)
 
     screen.fill(sky)
@@ -499,12 +499,12 @@ while running:
 
     if started:
 
-        score_text = str(score)
-        score_width = text_size(score_text, 6)
+        score_str = str(score)
+        score_w = get_text_size(score_str, 6)
 
-        pixel_text(
-            score_text,
-            width // 2 - score_width // 2,
+        draw_text(
+            score_str,
+            width // 2 - score_w // 2,
             40,
             6,
             white,
@@ -514,11 +514,11 @@ while running:
     elif countdown > 0:
 
         number = str(countdown)
-        number_width = text_size(number, 8)
+        number_w = get_text_size(number, 8)
 
-        pixel_text(
+        draw_text(
             number,
-            width // 2 - number_width // 2,
+            width // 2 - number_w // 2,
             height // 2 - 28,
             8,
             white,
@@ -528,11 +528,11 @@ while running:
     if game_over:
 
         title = "GAME OVER"
-        title_width = text_size(title, 4)
+        title_w = get_text_size(title, 4)
 
-        pixel_text(
+        draw_text(
             title,
-            width // 2 - title_width // 2,
+            width // 2 - title_w // 2,
             height // 2 - 40,
             4,
             red,
@@ -540,11 +540,11 @@ while running:
         )
 
         text = "PRESS SPACE"
-        text_width = text_size(text, 2)
+        text_w = get_text_size(text, 2)
 
-        pixel_text(
+        draw_text(
             text,
-            width // 2 - text_width // 2,
+            width // 2 - text_w // 2,
             height // 2 + 10,
             2,
             white,
@@ -552,11 +552,11 @@ while running:
         )
 
         text = "TO RESTART"
-        text_width = text_size(text, 2)
+        text_w = get_text_size(text, 2)
 
-        pixel_text(
+        draw_text(
             text,
-            width // 2 - text_width // 2,
+            width // 2 - text_w // 2,
             height // 2 + 30,
             2,
             white,
