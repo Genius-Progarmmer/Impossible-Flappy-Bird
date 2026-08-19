@@ -39,3 +39,8 @@ Install Pygame:
 
 ```bash
 pip install pygame
+```
+
+## Contact
+
+- **Telegram:** https://t.me/GeniusProgrammer135
